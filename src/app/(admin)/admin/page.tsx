@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/auth/profile";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Building2, Users, CreditCard } from "lucide-react";
 
 export const metadata = {
@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const profile = await requireRole("admin");
+  await requireRole("admin");
 
   return (
     <div className="space-y-6">
