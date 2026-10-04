@@ -14,44 +14,41 @@ describe("RLS Matrix Security Tests (Section 22 do PROMPT MESTRE)", () => {
   let mariaPatientId: string;
 
   beforeAll(async () => {
-    // 1. Authenticate Admin
     adminClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false },
     });
-    const adminAuth = await adminClient.auth.signInWithPassword({
-      email: "admin.ficticio@lumina.dev",
-      password: PASSWORD,
-    });
-    expect(adminAuth.error).toBeNull();
-
-    // 2. Authenticate Professional A (Dra. Ana)
     proAnaClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false },
     });
-    const anaAuth = await proAnaClient.auth.signInWithPassword({
-      email: "ana.profissional@lumina.dev",
-      password: PASSWORD,
-    });
-    expect(anaAuth.error).toBeNull();
-
-    // 3. Authenticate Patient A (Maria)
     patientMariaClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false },
     });
-    const mariaAuth = await patientMariaClient.auth.signInWithPassword({
-      email: "maria.paciente@lumina.dev",
-      password: PASSWORD,
-    });
-    expect(mariaAuth.error).toBeNull();
-
-    // 4. Authenticate Patient B (João)
     patientJoaoClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       auth: { persistSession: false },
     });
-    const joaoAuth = await patientJoaoClient.auth.signInWithPassword({
-      email: "joao.paciente@lumina.dev",
-      password: PASSWORD,
-    });
+
+    const [adminAuth, anaAuth, mariaAuth, joaoAuth] = await Promise.all([
+      adminClient.auth.signInWithPassword({
+        email: "admin.ficticio@lumina.dev",
+        password: PASSWORD,
+      }),
+      proAnaClient.auth.signInWithPassword({
+        email: "ana.profissional@lumina.dev",
+        password: PASSWORD,
+      }),
+      patientMariaClient.auth.signInWithPassword({
+        email: "maria.paciente@lumina.dev",
+        password: PASSWORD,
+      }),
+      patientJoaoClient.auth.signInWithPassword({
+        email: "joao.paciente@lumina.dev",
+        password: PASSWORD,
+      }),
+    ]);
+
+    expect(adminAuth.error).toBeNull();
+    expect(anaAuth.error).toBeNull();
+    expect(mariaAuth.error).toBeNull();
     expect(joaoAuth.error).toBeNull();
 
     // Retrieve Maria's patient record ID
@@ -62,6 +59,7 @@ describe("RLS Matrix Security Tests (Section 22 do PROMPT MESTRE)", () => {
     expect(mariaPatient?.id).toBeDefined();
     mariaPatientId = mariaPatient!.id;
   }, 15000);
+
 
   // Teste 1: Admin tenta acessar D/P/A (activity_assessments)
   it("Teste 1: Admin tenta acessar D/P/A (activity_assessments) -> NEGADO (RLS retorna 0 linhas)", async () => {
