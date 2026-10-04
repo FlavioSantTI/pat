@@ -11,7 +11,14 @@ export async function getProfile(): Promise<Profile | null> {
 
   const { data: row } = await supabase
     .from("users")
-    .select("id, role, organization_id, email")
+    .select(`
+      id,
+      role,
+      organization_id,
+      email,
+      patients (id, display_name),
+      professionals (id, display_name)
+    `)
     .eq("id", user.id)
     .maybeSingle();
 
@@ -29,29 +36,23 @@ export async function getProfile(): Promise<Profile | null> {
   let patientId: string | undefined;
   let professionalId: string | undefined;
 
-  if (row.role === "patient") {
-    const { data: patient } = await supabase
-      .from("patients")
-      .select("id, display_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    displayName = patient?.display_name ?? displayName;
-    patientId = patient?.id;
+  const patientRecord = Array.isArray(row.patients) ? row.patients[0] : row.patients;
+  const proRecord = Array.isArray(row.professionals) ? row.professionals[0] : row.professionals;
+
+  if (row.role === "patient" && patientRecord) {
+    displayName = patientRecord.display_name ?? displayName;
+    patientId = patientRecord.id;
   }
 
-  if (row.role === "professional") {
-    const { data: pro } = await supabase
-      .from("professionals")
-      .select("id, display_name")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    displayName = pro?.display_name ?? displayName;
-    professionalId = pro?.id;
+  if (row.role === "professional" && proRecord) {
+    displayName = proRecord.display_name ?? displayName;
+    professionalId = proRecord.id;
   }
 
   if (row.role === "admin") {
     displayName = "Administração";
   }
+
 
   return {
     userId: row.id,
