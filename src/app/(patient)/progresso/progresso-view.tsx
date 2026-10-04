@@ -14,7 +14,9 @@ import {
   ClipboardList,
   Target,
   Calendar,
+  Folder,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { PatientNewMetricDialog } from "@/components/patient/new-metric-dialog";
 
@@ -88,17 +90,31 @@ export function ProgressoView({ metrics, gains, reviews }: ProgressoViewProps) {
           </p>
         </div>
 
-        <Link
-          href="/revisao"
-          className={cn(
-            buttonVariants({ variant: "default", size: "sm" }),
-            "rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-xs self-start sm:self-auto",
-          )}
-        >
-          <ClipboardList className="w-4 h-4 mr-1.5" />
-          Revisão Semanal
-        </Link>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Link
+            href="/areas"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "rounded-2xl border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-xs shadow-xs",
+            )}
+          >
+            <Folder className="w-4 h-4 mr-1.5 text-indigo-600" />
+            + Áreas de Vida
+          </Link>
+
+          <Link
+            href="/revisao"
+            className={cn(
+              buttonVariants({ variant: "default", size: "sm" }),
+              "rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-xs",
+            )}
+          >
+            <ClipboardList className="w-4 h-4 mr-1.5" />
+            Revisão Semanal
+          </Link>
+        </div>
       </div>
+
 
       {/* Progress by Area Cards (BA-IACC Model) */}
       <div className="space-y-4">
