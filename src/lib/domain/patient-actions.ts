@@ -363,3 +363,105 @@ export async function selfAssignActivityAction(payload: {
   return { success: true };
 }
 
+export async function updatePatientAreaAction(areaId: string, name: string) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  if (!name.trim()) return { error: "Nome de área não pode ser vazio." };
+
+  const { error } = await supabase
+    .from("patient_areas")
+    .update({ name: name.trim() })
+    .eq("id", areaId)
+    .eq("patient_id", profile.patientId!);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/areas");
+  return { success: true };
+}
+
+export async function deletePatientAreaAction(areaId: string) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("patient_areas")
+    .delete()
+    .eq("id", areaId)
+    .eq("patient_id", profile.patientId!);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/areas");
+  return { success: true };
+}
+
+export async function updatePatientMetricAction(
+  metricId: string,
+  payload: {
+    areaName?: string;
+    observableIndicator?: string;
+    flexibleDirection?: string;
+    baselineValue?: string;
+    currentValue?: string;
+    nextSmallStep?: string;
+  },
+) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  const updates: Record<string, string | null> = {};
+  if (payload.areaName !== undefined) updates.area_name = payload.areaName.trim();
+  if (payload.observableIndicator !== undefined) updates.observable_indicator = payload.observableIndicator.trim();
+  if (payload.flexibleDirection !== undefined) updates.flexible_direction = payload.flexibleDirection.trim() || null;
+  if (payload.baselineValue !== undefined) updates.baseline_value = payload.baselineValue.trim() || null;
+  if (payload.currentValue !== undefined) updates.current_value = payload.currentValue.trim() || null;
+  if (payload.nextSmallStep !== undefined) updates.next_small_step = payload.nextSmallStep.trim() || null;
+
+  const { error } = await supabase
+    .from("patient_progress_metrics")
+    .update(updates)
+    .eq("id", metricId)
+    .eq("patient_id", profile.patientId!);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/progresso");
+  return { success: true };
+}
+
+export async function deletePatientMetricAction(metricId: string) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("patient_progress_metrics")
+    .delete()
+    .eq("id", metricId)
+    .eq("patient_id", profile.patientId!);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/progresso");
+  return { success: true };
+}
+
+export async function deleteAssignmentAction(assignmentId: string) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("activity_assignments")
+    .delete()
+    .eq("id", assignmentId)
+    .eq("patient_id", profile.patientId!);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/hoje");
+  revalidatePath("/agenda");
+  return { success: true };
+}
+
+

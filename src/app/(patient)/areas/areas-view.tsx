@@ -5,8 +5,13 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "cn";
 import { Input } from "@/components/ui/input";
-import { createPatientAreaAction, archivePatientAreaAction } from "@/lib/domain/patient-actions";
-import { ArrowLeft, Plus, Folder, Archive } from "lucide-react";
+import {
+  createPatientAreaAction,
+  archivePatientAreaAction,
+  updatePatientAreaAction,
+  deletePatientAreaAction,
+} from "@/lib/domain/patient-actions";
+import { ArrowLeft, Plus, Folder, Archive, Edit2, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 export type PatientArea = {
@@ -19,6 +24,8 @@ export type PatientArea = {
 export function AreasView({ areas }: { areas: PatientArea[] }) {
   const [newAreaName, setNewAreaName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +44,36 @@ export function AreasView({ areas }: { areas: PatientArea[] }) {
       toast.error(err instanceof Error ? err.message : "Erro ao criar área.");
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleStartEdit = (area: PatientArea) => {
+    setEditingId(area.id);
+    setEditingName(area.name);
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    if (!editingName.trim()) return;
+    try {
+      const res = await updatePatientAreaAction(id, editingName.trim());
+      if (res?.error) toast.error(res.error);
+      else {
+        toast.success("Área atualizada!");
+        setEditingId(null);
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar.");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Deseja excluir permanentemente esta área?")) return;
+    try {
+      const res = await deletePatientAreaAction(id);
+      if (res?.error) toast.error(res.error);
+      else toast.info("Área excluída com sucesso.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir.");
     }
   };
 
@@ -117,24 +154,74 @@ export function AreasView({ areas }: { areas: PatientArea[] }) {
                 key={area.id}
                 className="p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between"
               >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
-                    <Folder className="w-4 h-4" />
+                {editingId === area.id ? (
+                  <div className="flex items-center gap-2 w-full">
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      className="rounded-xl border-slate-200 text-xs h-8"
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => handleSaveEdit(area.id)}
+                      className="h-8 w-8 p-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                      title="Salvar alteração"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingId(null)}
+                      className="h-8 w-8 p-0 text-slate-400 rounded-lg"
+                      title="Cancelar"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
-                  <span className="text-xs font-semibold text-slate-800">
-                    {area.name}
-                  </span>
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
+                        <Folder className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-800">
+                        {area.name}
+                      </span>
+                    </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleArchive(area.id)}
-                  className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 rounded-lg"
-                  title="Arquivar área"
-                >
-                  <Archive className="w-3.5 h-3.5" />
-                </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleStartEdit(area)}
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600 rounded-lg"
+                        title="Editar nome"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleArchive(area.id)}
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-amber-600 rounded-lg"
+                        title="Arquivar área"
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(area.id)}
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-rose-600 rounded-lg"
+                        title="Excluir permanentemente"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -143,3 +230,4 @@ export function AreasView({ areas }: { areas: PatientArea[] }) {
     </div>
   );
 }
+

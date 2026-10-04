@@ -7,7 +7,7 @@ import { cn } from "cn";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { createGainAction } from "@/lib/domain/patient-actions";
+import { deletePatientMetricAction, createGainAction } from "@/lib/domain/patient-actions";
 import {
   Sparkles,
   Plus,
@@ -15,7 +15,9 @@ import {
   Target,
   Calendar,
   Folder,
+  Trash2,
 } from "lucide-react";
+
 
 import { toast } from "sonner";
 import { PatientNewMetricDialog } from "@/components/patient/new-metric-dialog";
@@ -147,7 +149,23 @@ export function ProgressoView({ metrics, gains, reviews }: ProgressoViewProps) {
                       {m.observable_indicator}
                     </span>
                   </div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      if (!confirm("Deseja excluir este indicador?")) return;
+                      const res = await deletePatientMetricAction(m.id);
+                      if (res?.error) toast.error(res.error);
+                      else toast.info("Indicador removido.");
+                    }}
+                    className="h-7 w-7 p-0 text-slate-400 hover:text-rose-600 rounded-lg"
+                    title="Excluir indicador"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
+
 
                 <CardContent className="p-4 sm:p-5 space-y-4">
                   {m.flexible_direction && (
