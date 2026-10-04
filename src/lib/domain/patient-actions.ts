@@ -348,15 +348,22 @@ export async function selfAssignActivityAction(payload: {
 
   const activityId = act?.id;
 
+  const period = payload.scheduledTime ? "specific_time" : "morning";
+  const scheduledAt = payload.scheduledTime
+    ? `${payload.scheduledDate}T${payload.scheduledTime}:00`
+    : null;
+
   const { error } = await supabase.from("activity_assignments").insert({
     patient_id: profile.patientId!,
     activity_id: activityId || null,
     scheduled_date: payload.scheduledDate,
-    scheduled_time: payload.scheduledTime || null,
+    scheduled_at: scheduledAt,
+    period: period,
     status: "pending",
   });
 
   if (error) return { error: error.message };
+
 
   revalidatePath("/hoje");
   revalidatePath("/agenda");
