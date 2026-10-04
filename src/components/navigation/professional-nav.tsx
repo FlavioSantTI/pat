@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import type { Profile } from "@/types";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Pacientes", icon: Users },
+  { href: "/dashboard", label: "Pacientes & Atribuições", icon: Users },
   { href: "/programas", label: "Programas & Atividades", icon: BookOpen },
-  { href: "/revisoes", label: "Revisões Semanais", icon: ClipboardCheck },
+  { href: "/revisoes", label: "Revisões & D/P/A", icon: ClipboardCheck },
 ];
+
 
 export function ProfessionalNav({ profile }: { profile: Profile }) {
   const pathname = usePathname();
