@@ -359,8 +359,9 @@ export async function selfAssignActivityAction(payload: {
     scheduled_date: payload.scheduledDate,
     scheduled_at: scheduledAt,
     period: period,
-    status: "pending",
+    status: "scheduled",
   });
+
 
   if (error) return { error: error.message };
 
