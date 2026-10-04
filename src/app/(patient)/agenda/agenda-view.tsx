@@ -12,8 +12,10 @@ import {
 } from "lucide-react";
 import { PERIOD_LABELS } from "@/types";
 import type { PatientActivityItem } from "@/lib/domain/patient";
+import { PatientNewAssignmentDialog } from "@/components/patient/new-assignment-dialog";
 
 type ViewMode = "dia" | "semana" | "mes";
+
 
 export function AgendaView({ initialItems }: { initialItems: PatientActivityItem[] }) {
   const [viewMode, setViewMode] = useState<ViewMode>("dia");
@@ -88,24 +90,29 @@ export function AgendaView({ initialItems }: { initialItems: PatientActivityItem
           </p>
         </div>
 
-        {/* View Mode Segmented Control */}
-        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80 self-start sm:self-auto">
-          {(["dia", "semana", "mes"] as const).map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setViewMode(mode)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
-                viewMode === mode
-                  ? "bg-white text-indigo-600 shadow-xs"
-                  : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              {mode}
-            </button>
-          ))}
+        {/* View Mode Segmented Control & New Assignment Button */}
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+            {(["dia", "semana", "mes"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize transition-all ${
+                  viewMode === mode
+                    ? "bg-white text-indigo-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          <PatientNewAssignmentDialog defaultDate={dateStr} buttonLabel="Nova Atribuição" variant="default" />
         </div>
       </div>
+
 
       {/* Date Navigation Bar */}
       <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200 shadow-xs">

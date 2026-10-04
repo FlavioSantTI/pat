@@ -16,8 +16,10 @@ import {
   Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PatientNewMetricDialog } from "@/components/patient/new-metric-dialog";
 
 export type MetricItem = {
+
   id: string;
   area_name: string;
   observable_indicator: string;
@@ -100,10 +102,14 @@ export function ProgressoView({ metrics, gains, reviews }: ProgressoViewProps) {
 
       {/* Progress by Area Cards (BA-IACC Model) */}
       <div className="space-y-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-          <Target className="w-4 h-4 text-indigo-500" />
-          Indicadores e Direções Flexíveis
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Target className="w-4 h-4 text-indigo-500" />
+            Indicadores e Direções Flexíveis (BA-IACC)
+          </h2>
+          <PatientNewMetricDialog />
+        </div>
+
 
         {metrics.length === 0 ? (
           <Card className="border-slate-200/80 bg-white rounded-2xl p-6 text-center text-slate-400">

@@ -348,8 +348,12 @@ create policy patient_gains_own on public.gains
 create policy professional_gains_select on public.gains
   for select using (public.is_linked_professional_patient(patient_id));
 
-create policy patient_progress_select on public.progress_metrics
-  for select using (patient_id = public.current_patient_id());
+create policy patient_assignments_insert on public.activity_assignments
+  for insert with check (patient_id = public.current_patient_id());
+
+create policy patient_progress_own on public.progress_metrics
+  for all using (patient_id = public.current_patient_id())
+  with check (patient_id = public.current_patient_id());
 create policy professional_progress_all on public.progress_metrics
   for all using (public.is_linked_professional_patient(patient_id))
   with check (public.is_linked_professional_patient(patient_id));

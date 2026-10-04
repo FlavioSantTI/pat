@@ -6,6 +6,7 @@ import { Sun, Sparkles, HeartHandshake } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "cn";
+import { PatientNewAssignmentDialog } from "@/components/patient/new-assignment-dialog";
 
 export const metadata = {
   title: "Hoje — Lumina",
@@ -32,18 +33,23 @@ export default async function HojePage() {
   return (
     <div className="space-y-6">
       {/* Greeting and reassurance */}
-      <div className="space-y-1.5">
-        <div className="flex items-center gap-2 text-indigo-600 font-medium text-xs uppercase tracking-wider">
-          <Sun className="w-4 h-4 text-amber-500" />
-          <span className="capitalize">{todayFormatted}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-indigo-600 font-medium text-xs uppercase tracking-wider">
+            <Sun className="w-4 h-4 text-amber-500" />
+            <span className="capitalize">{todayFormatted}</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+            Olá, {profile.displayName.split(" ")[0]}
+          </h1>
+          <p className="text-sm text-slate-500 leading-relaxed max-w-xl">
+            Um passo de cada vez. Respeite o seu ritmo e escolha começar pelo que for possível hoje, sem cobrança.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-          Olá, {profile.displayName.split(" ")[0]}
-        </h1>
-        <p className="text-sm text-slate-500 leading-relaxed max-w-xl">
-          Um passo de cada vez. Respeite o seu ritmo e escolha começar pelo que for possível hoje, sem cobrança.
-        </p>
+
+        <PatientNewAssignmentDialog buttonLabel="Nova Atribuição" variant="default" />
       </div>
+
 
       {/* Quick summary card */}
       {items.length > 0 && (

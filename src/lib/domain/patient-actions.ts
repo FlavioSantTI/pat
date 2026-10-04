@@ -291,3 +291,75 @@ export async function archivePatientAreaAction(areaId: string) {
   revalidatePath("/areas");
   return { success: true };
 }
+
+export async function createPatientMetricAction(payload: {
+  areaName: string;
+  observableIndicator: string;
+  flexibleDirection?: string;
+  baselineValue?: string;
+  currentValue?: string;
+  nextSmallStep?: string;
+}) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  if (!payload.areaName.trim() || !payload.observableIndicator.trim()) {
+    return { error: "Área e indicador observável são obrigatórios." };
+  }
+
+  const { error } = await supabase.from("patient_progress_metrics").insert({
+    patient_id: profile.patientId!,
+    area_name: payload.areaName.trim(),
+    observable_indicator: payload.observableIndicator.trim(),
+    flexible_direction: payload.flexibleDirection?.trim() || null,
+    baseline_value: payload.baselineValue?.trim() || null,
+    current_value: payload.currentValue?.trim() || null,
+    next_small_step: payload.nextSmallStep?.trim() || null,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/progresso");
+  return { success: true };
+}
+
+export async function selfAssignActivityAction(payload: {
+  title: string;
+  description?: string;
+  scheduledDate: string;
+  scheduledTime?: string;
+}) {
+  const profile = await requireRole("patient");
+  const supabase = await createClient();
+
+  if (!payload.title.trim() || !payload.scheduledDate) {
+    return { error: "Título e data agendada são obrigatórios." };
+  }
+
+  const { data: act } = await supabase
+    .from("activities")
+    .insert({
+      title: payload.title.trim(),
+      description: payload.description?.trim() || null,
+      created_by_patient_id: profile.patientId,
+    })
+    .select("id")
+    .single();
+
+  const activityId = act?.id;
+
+  const { error } = await supabase.from("activity_assignments").insert({
+    patient_id: profile.patientId!,
+    activity_id: activityId || null,
+    scheduled_date: payload.scheduledDate,
+    scheduled_time: payload.scheduledTime || null,
+    status: "pending",
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/hoje");
+  revalidatePath("/agenda");
+  return { success: true };
+}
+
