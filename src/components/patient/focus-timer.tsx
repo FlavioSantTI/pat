@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw, Timer, Sparkles } from "lucide-react";
 import { FOCUS_TIMER_PRESETS } from "@/lib/domain/assignment-status";
+import { useTimerContext } from "@/providers/timer-provider";
 
 interface FocusTimerProps {
+  assignmentId?: string;
+  activityTitle?: string;
+  suggestedMinutes?: number | null;
   onTimeUpdate?: (data: {
     enabled: boolean;
     minutes: number;
@@ -13,64 +17,102 @@ interface FocusTimerProps {
   }) => void;
 }
 
-export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
-  const [enabled, setEnabled] = useState(false);
-  const [selectedMinutes, setSelectedMinutes] = useState<number>(10);
+export function FocusTimer({
+  assignmentId,
+  activityTitle = "Atividade em andamento",
+  suggestedMinutes,
+  onTimeUpdate,
+}: FocusTimerProps) {
+  const timerContext = useTimerContext();
+  const globalTimer = timerContext.timer;
+
+  const isGlobalMatching = Boolean(
+    assignmentId && globalTimer && globalTimer.assignmentId === assignmentId
+  );
+
+  const [enabled, setEnabled] = useState(isGlobalMatching);
+  const [selectedMinutes, setSelectedMinutes] = useState<number>(suggestedMinutes || 10);
   const [customMinutes, setCustomMinutes] = useState<string>("");
   const [isCustom, setIsCustom] = useState(false);
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(10 * 60);
-  const [isActive, setIsActive] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const [localSecondsRemaining, setLocalSecondsRemaining] = useState<number>((suggestedMinutes || 10) * 60);
 
   const currentMinutes = isCustom ? Number(customMinutes) || 10 : selectedMinutes;
+
+  useEffect(() => {
+    if (isGlobalMatching) {
+      setEnabled(true);
+    }
+  }, [isGlobalMatching]);
+
+  // Determine active status and remaining time
+  const isActive = isGlobalMatching ? globalTimer?.isRunning ?? false : false;
+  const displaySeconds = isGlobalMatching
+    ? timerContext.secondsRemaining
+    : localSecondsRemaining;
 
   const handleSelectPreset = (preset: number) => {
     setIsCustom(false);
     setSelectedMinutes(preset);
-    setIsActive(false);
-    setSecondsRemaining(preset * 60);
-    setElapsedSeconds(0);
+    if (isGlobalMatching) {
+      timerContext.stopTimer();
+    }
+    setLocalSecondsRemaining(preset * 60);
   };
 
   const handleSelectCustom = () => {
     setIsCustom(true);
     const mins = Number(customMinutes) || 10;
-    setIsActive(false);
-    setSecondsRemaining(mins * 60);
-    setElapsedSeconds(0);
+    if (isGlobalMatching) {
+      timerContext.stopTimer();
+    }
+    setLocalSecondsRemaining(mins * 60);
   };
 
   const handleCustomMinutesChange = (value: string) => {
     setCustomMinutes(value);
     const mins = Number(value) || 10;
-    setIsActive(false);
-    setSecondsRemaining(mins * 60);
-    setElapsedSeconds(0);
+    if (isGlobalMatching) {
+      timerContext.stopTimer();
+    }
+    setLocalSecondsRemaining(mins * 60);
   };
 
-  useEffect(() => {
-    if (isActive) {
-      timerRef.current = setInterval(() => {
-        setSecondsRemaining((prev) => {
-          if (prev <= 1) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            setIsActive(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-        setElapsedSeconds((prev) => prev + 1);
-      }, 1000);
+  const handleToggleActive = () => {
+    if (isGlobalMatching) {
+      if (globalTimer?.isRunning) {
+        timerContext.pauseTimer();
+      } else if (globalTimer?.pausedRemainingSeconds !== null) {
+        timerContext.resumeTimer();
+      } else {
+        if (assignmentId) {
+          timerContext.startTimer({
+            assignmentId,
+            activityTitle,
+            durationMinutes: currentMinutes,
+          });
+        }
+      }
     } else {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (assignmentId) {
+        timerContext.startTimer({
+          assignmentId,
+          activityTitle,
+          durationMinutes: currentMinutes,
+        });
+      }
     }
+  };
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isActive]);
+  const resetTimer = () => {
+    if (isGlobalMatching) {
+      timerContext.stopTimer();
+    }
+    setLocalSecondsRemaining(currentMinutes * 60);
+  };
+
+  const elapsedSeconds = isGlobalMatching && globalTimer
+    ? Math.max(0, currentMinutes * 60 - timerContext.secondsRemaining)
+    : Math.max(0, currentMinutes * 60 - localSecondsRemaining);
 
   const notifyUpdate = useCallback(() => {
     onTimeUpdate?.({
@@ -87,15 +129,9 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
   const toggleTimer = () => {
     const nextState = !enabled;
     setEnabled(nextState);
-    if (!nextState) {
-      setIsActive(false);
+    if (!nextState && isGlobalMatching) {
+      timerContext.stopTimer();
     }
-  };
-
-  const resetTimer = () => {
-    setIsActive(false);
-    setSecondsRemaining(currentMinutes * 60);
-    setElapsedSeconds(0);
   };
 
   const formatTime = (totalSeconds: number) => {
@@ -106,7 +142,7 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
 
   const progressPercent = Math.max(
     0,
-    Math.min(100, ((currentMinutes * 60 - secondsRemaining) / (currentMinutes * 60)) * 100),
+    Math.min(100, ((currentMinutes * 60 - displaySeconds) / (currentMinutes * 60)) * 100),
   );
 
   return (
@@ -118,7 +154,7 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
           </div>
           <div>
             <h4 className="text-sm font-semibold text-slate-800">Temporizador de foco</h4>
-            <p className="text-[11px] text-slate-400">Opcional para apoiar a presença no início</p>
+            <p className="text-[11px] text-slate-400">Permite navegar no app. Soará alarme ao concluir.</p>
           </div>
         </div>
 
@@ -187,7 +223,7 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
           {/* Digital counter and progress */}
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60 text-center space-y-3">
             <div className="text-3xl sm:text-4xl font-mono font-bold tracking-tight text-slate-900">
-              {formatTime(secondsRemaining)}
+              {formatTime(displaySeconds)}
             </div>
 
             <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
@@ -201,7 +237,7 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
               <Button
                 type="button"
                 size="sm"
-                onClick={() => setIsActive(!isActive)}
+                onClick={handleToggleActive}
                 className={`rounded-xl px-4 h-9 font-medium text-xs shadow-xs ${
                   isActive
                     ? "bg-amber-600 hover:bg-amber-700 text-white"
@@ -214,7 +250,7 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
                   </>
                 ) : (
                   <>
-                    <Play className="w-3.5 h-3.5 mr-1.5" /> Iniciar foco
+                    <Play className="w-3.5 h-3.5 mr-1.5" /> {isGlobalMatching && globalTimer?.pausedRemainingSeconds ? "Continuar foco" : "Iniciar foco"}
                   </>
                 )}
               </Button>
@@ -230,7 +266,7 @@ export function FocusTimer({ onTimeUpdate }: FocusTimerProps) {
               </Button>
             </div>
 
-            {secondsRemaining === 0 && (
+            {displaySeconds === 0 && (
               <p className="text-xs text-emerald-600 font-semibold flex items-center justify-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" /> Tempo concluído. Você foi até onde foi viável!
               </p>

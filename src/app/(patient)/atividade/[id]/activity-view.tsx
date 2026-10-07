@@ -21,6 +21,8 @@ import { PERIOD_LABELS, STATUS_LABELS } from "@/types";
 import { toast } from "sonner";
 import type { PatientActivityItem } from "@/lib/domain/patient";
 
+import { useTimerContext } from "@/providers/timer-provider";
+
 export function ActivityView({ item }: { item: PatientActivityItem }) {
   const [assessmentOpen, setAssessmentOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,11 +40,19 @@ export function ActivityView({ item }: { item: PatientActivityItem }) {
   const isStarted = item.status === "started";
   const isScheduled = item.status === "scheduled";
 
+  const timerContext = useTimerContext();
+
   const handleStart = async () => {
     setIsLoading(true);
     try {
       await startAssignmentAction(item.id);
       toast.success("Atividade iniciada. Boa prática!");
+      // Automatically start global timer for patient with sound alarm when time elapses
+      timerContext.startTimer({
+        assignmentId: item.id,
+        activityTitle: item.title,
+        durationMinutes: item.durationMinutes || 10,
+      });
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Não foi possível iniciar a atividade.");
     } finally {
@@ -144,7 +154,12 @@ export function ActivityView({ item }: { item: PatientActivityItem }) {
 
           {/* Focus Timer */}
           {!isCompleted && (
-            <FocusTimer onTimeUpdate={(data) => setFocusData(data)} />
+            <FocusTimer
+              assignmentId={item.id}
+              activityTitle={item.title}
+              suggestedMinutes={item.durationMinutes}
+              onTimeUpdate={(data) => setFocusData(data)}
+            />
           )}
 
           {/* Action buttons based on status */}
